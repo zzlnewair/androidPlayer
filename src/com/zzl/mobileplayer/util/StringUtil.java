@@ -43,4 +43,13 @@ public class StringUtil {
 		SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss");
 		return format.format(new Date());
 	}
+	
+	/**
+	 * 将滴答.mp3转为滴答
+	 * @param audioName
+	 * @return
+	 */
+	public static String formatAudioName(String audioName){
+		return audioName.substring(0,audioName.lastIndexOf("."));
+	}
 }
