@@ -1,5 +1,6 @@
 package com.zzl.mobileplayer.ui.activity;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import android.app.Service;
@@ -11,8 +12,10 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -23,8 +26,13 @@ import android.widget.TextView;
 import com.zzl.mobileplayer.R;
 import com.zzl.mobileplayer.base.BaseActivity;
 import com.zzl.mobileplayer.bean.AudioItem;
+import com.zzl.mobileplayer.bean.Lyric;
 import com.zzl.mobileplayer.service.AudioPlayService;
 import com.zzl.mobileplayer.service.AudioPlayService.AudioServiceBinder;
+import com.zzl.mobileplayer.ui.view.LyricView;
+import com.zzl.mobileplayer.util.LogUtil;
+import com.zzl.mobileplayer.util.LyricLoader;
+import com.zzl.mobileplayer.util.LyricParser;
 import com.zzl.mobileplayer.util.StringUtil;
 
 public class AudioPlayerActivity extends BaseActivity{
@@ -32,21 +40,34 @@ public class AudioPlayerActivity extends BaseActivity{
 	private ImageView btn_play,btn_paly_mode,btn_pre,btn_next;
 	private TextView tv_title,tv_artist,tv_time;
 	private SeekBar seekbar;
+	private LyricView lyricView;
 	
 	private AudioBroadcastReceiver audioBroadcastReceiver;
 	private AudioServiceConnnection audioServiceConnnection;
 	private AudioServiceBinder audioServiceBinder;
 	
 	private static final int MESSAGE_UPDATE_PROGRESS = 0;//更新进度
+	private static final int MESSAGE_UPDATE_LYRIC = 1;//更新歌词
 	private Handler handler = new Handler(){
 		public void handleMessage(android.os.Message msg) {
 			switch (msg.what) {
 			case MESSAGE_UPDATE_PROGRESS:
 				updatePlayProgress();
 				break;
+			case MESSAGE_UPDATE_LYRIC:
+				updateLyric();
+				break;
 			}
 		};
 	};
+	
+	/**
+	 * 更新歌词
+	 */
+	private void updateLyric(){
+		lyricView.roll(audioServiceBinder.getCurrentPosition(),audioServiceBinder.getDuration());
+		handler.sendEmptyMessage(MESSAGE_UPDATE_LYRIC);
+	}
 	
 	/**
 	 * 更新播放进度
@@ -69,6 +90,7 @@ public class AudioPlayerActivity extends BaseActivity{
 		tv_time = (TextView) findViewById(R.id.tv_time);
 		tv_artist = (TextView) findViewById(R.id.tv_artist);
 		seekbar = (SeekBar) findViewById(R.id.seekbar);
+		lyricView = (LyricView) findViewById(R.id.lyricView);
 		
 		btn_back = (ImageView) findViewById(R.id.btn_back);
 		iv_anim = (ImageView) findViewById(R.id.iv_anim);
@@ -107,17 +129,26 @@ public class AudioPlayerActivity extends BaseActivity{
 	protected void initData() {
 		registerAudioBroadcastReceiver();
 		
-		int currentPosition = getIntent().getExtras().getInt("currentPosition");
-		ArrayList<AudioItem> audioList = (ArrayList<AudioItem>) getIntent().getExtras().getSerializable("audioList");
-		
 		Intent intent = new Intent(this,AudioPlayService.class);
-		Bundle bundle = new Bundle();
-		bundle.putInt("currentPosition", currentPosition);
-		bundle.putSerializable("audioList", audioList);
-		intent.putExtras(bundle);
+		
+		boolean isFromNotification = getIntent().getBooleanExtra("isFromNotification", false);
+		if(isFromNotification){
+			//表面是通知开启的activity
+			intent.putExtra("isFromNotification", isFromNotification);
+			intent.putExtra("view_action", getIntent().getIntExtra("view_action", -1));
+		}else{
+			//从音乐列表进入的
+			int currentPosition = getIntent().getExtras().getInt("currentPosition");
+			ArrayList<AudioItem> audioList = (ArrayList<AudioItem>) getIntent().getExtras().getSerializable("audioList");
+			Bundle bundle = new Bundle();
+			bundle.putInt("currentPosition", currentPosition);
+			bundle.putSerializable("audioList", audioList);
+			intent.putExtras(bundle);
+		}
 		audioServiceConnnection = new AudioServiceConnnection();
 		startService(intent);//传递数据用的
 		bindService(intent, audioServiceConnnection, Service.BIND_AUTO_CREATE);
+		
 	}
 	
 	private void registerAudioBroadcastReceiver(){
@@ -203,6 +234,13 @@ public class AudioPlayerActivity extends BaseActivity{
 				updatePlayModeBtnBg();
 				
 				updatePlayProgress();//开始更新播放进度
+				
+				File lyricFile = LyricLoader.loadLyricFile(audioItem.getTitle());
+				ArrayList<Lyric> list = LyricParser.parseLyricFromFile(lyricFile);
+				lyricView.setLyricList(list);
+				
+				updateLyric();//更新歌词
+				
 			}else if (AudioPlayService.ACION_MEDIA_COMPLETION.equals(intent.getAction())) {
 				AudioItem audioItem = (AudioItem) intent.getExtras().getSerializable("audioItem");
 				

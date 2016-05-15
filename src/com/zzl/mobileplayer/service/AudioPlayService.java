@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import com.zzl.mobileplayer.R;
 import com.zzl.mobileplayer.bean.AudioItem;
+import com.zzl.mobileplayer.ui.activity.AudioPlayerActivity;
 import com.zzl.mobileplayer.util.StringUtil;
 
 import android.app.Notification;
@@ -76,7 +77,7 @@ public class AudioPlayService extends Service{
 					audioServiceBinder.playNext(false);
 					break;
 				case VIEW_CONTAINER:
-					
+					notifyPrepared();
 					break;
 				}
 			}else {
@@ -124,13 +125,15 @@ public class AudioPlayService extends Service{
 			if(mediaPlayer!=null){
 				mediaPlayer.pause();
 			}
-			notificationManager.cancel(1);
+//			notificationManager.cancel(1);
+			stopForeground(true);
 		}
 		
 		public void start(){
 			if(mediaPlayer!=null){
 				mediaPlayer.start();
 			}
+			sendNotification();
 		}
 		
 		public long getCurrentPosition(){
@@ -195,9 +198,8 @@ public class AudioPlayService extends Service{
 	private OnPreparedListener mOnPreparedListener = new OnPreparedListener() {
 		@Override
 		public void onPrepared(MediaPlayer mp) {
-			mediaPlayer.start();
+			audioServiceBinder.start();
 			notifyPrepared();
-			sendNotification();
 		}
 	};
 	
@@ -244,7 +246,8 @@ public class AudioPlayService extends Service{
 		.setWhen(System.currentTimeMillis())
 		.setContent(getRemoteViews());
 		
-		notificationManager.notify(1, builder.build());
+//		notificationManager.notify(1, builder.build());
+		startForeground(1, builder.build());
 	}
 	
 	private RemoteViews getRemoteViews(){
@@ -253,16 +256,17 @@ public class AudioPlayService extends Service{
 		remoteViews.setTextViewText(R.id.tv_song_name, StringUtil.formatAudioName(audioItem.getTitle()));
 		remoteViews.setTextViewText(R.id.tv_artist_name, audioItem.getArtist());
 		
+		//点击pre按钮执行的intent
 		Intent preIntent = createNotificationIntent(VIEW_PRE);
 		PendingIntent preContentIntent = PendingIntent.getService(this, 0, preIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		remoteViews.setOnClickPendingIntent(R.id.iv_notification_pre, preContentIntent);
-		
+		//点击next按钮执行的intent
 		Intent nextIntent = createNotificationIntent(VIEW_NEXT);
 		PendingIntent nextContentIntent = PendingIntent.getService(this, 1, nextIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		remoteViews.setOnClickPendingIntent(R.id.iv_notification_next, nextContentIntent);
-		
+		//点击整个通知的布局执行的intent
 		Intent containerIntent = createNotificationIntent(VIEW_CONTAINER);;
-		PendingIntent containerContentIntent = PendingIntent.getBroadcast(this, 2, containerIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+		PendingIntent containerContentIntent = PendingIntent.getActivity(this, 2, containerIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		remoteViews.setOnClickPendingIntent(R.id.notification_container, containerContentIntent);
 		
 		
@@ -270,7 +274,8 @@ public class AudioPlayService extends Service{
 	}
 	
 	private Intent createNotificationIntent(int viewAction){
-		Intent intent = new Intent(AudioPlayService.this,AudioPlayService.class);
+		Intent intent = new Intent(AudioPlayService.this,viewAction==VIEW_CONTAINER
+				?AudioPlayerActivity.class:AudioPlayService.class);
 		intent.putExtra("isFromNotification", true);
 		intent.putExtra("view_action", viewAction);
 		return intent;

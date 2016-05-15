@@ -387,7 +387,7 @@ public class VitamioPlayerActivity extends BaseActivity{
 			finish();
 			break;
 		case R.id.btn_screen:
-		//	videoView.switchScreen();
+			videoView.switchScreen();
 			updateScreenBtnBg();
 			break;
 		}
@@ -397,8 +397,8 @@ public class VitamioPlayerActivity extends BaseActivity{
 	 * 改变屏幕按钮的背景图片
 	 */
 	private void updateScreenBtnBg(){
-		//btn_screen.setBackgroundResource(videoView.isFullScreen()?
-		//		R.drawable.selector_btn_defaultscreen:R.drawable.selector_btn_fullscreen);
+		btn_screen.setBackgroundResource(videoView.isFullScreen()?
+				R.drawable.selector_btn_defaultscreen:R.drawable.selector_btn_fullscreen);
 	}
 	
 	/**
