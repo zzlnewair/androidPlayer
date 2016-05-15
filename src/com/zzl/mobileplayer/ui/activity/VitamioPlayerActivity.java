@@ -1,28 +1,32 @@
 package com.zzl.mobileplayer.ui.activity;
 
+import io.vov.vitamio.LibsChecker;
+import io.vov.vitamio.MediaPlayer;
+import io.vov.vitamio.MediaPlayer.OnBufferingUpdateListener;
+import io.vov.vitamio.MediaPlayer.OnCompletionListener;
+import io.vov.vitamio.MediaPlayer.OnErrorListener;
+import io.vov.vitamio.MediaPlayer.OnInfoListener;
+import io.vov.vitamio.MediaPlayer.OnPreparedListener;
+import io.vov.vitamio.widget.VideoView;
 import java.util.ArrayList;
 import com.zzl.mobileplayer.R;
 import com.zzl.mobileplayer.base.BaseActivity;
 import com.zzl.mobileplayer.bean.VideoItem;
-import com.zzl.mobileplayer.ui.view.VideoView;
 import com.zzl.mobileplayer.util.LogUtil;
 import com.zzl.mobileplayer.util.StringUtil;
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.Animator.AnimatorListener;
 import com.nineoldandroids.view.ViewPropertyAnimator;
+
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.media.MediaPlayer.OnBufferingUpdateListener;
-import android.media.MediaPlayer.OnCompletionListener;
-import android.media.MediaPlayer.OnErrorListener;
-import android.media.MediaPlayer.OnInfoListener;
-import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.Handler;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
@@ -35,7 +39,7 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 
-public class VideoPlayerActivity extends BaseActivity{
+public class VitamioPlayerActivity extends BaseActivity{
 	VideoView videoView;
 	//顶部控制面板控件
 	private ImageView btn_exit,btn_pre,btn_play,btn_next,btn_screen;
@@ -84,7 +88,9 @@ public class VideoPlayerActivity extends BaseActivity{
 	
 	@Override
 	protected void initView() {
-		setContentView(R.layout.activity_video_player);
+		if (!LibsChecker.checkVitamioLibs(this))
+			return;
+		setContentView(R.layout.activity_vitamio_player);
 		videoView = (VideoView) findViewById(R.id.videoView);
 		btn_exit = (ImageView) findViewById(R.id.btn_exit);
 		btn_pre = (ImageView) findViewById(R.id.btn_pre);
@@ -177,7 +183,7 @@ public class VideoPlayerActivity extends BaseActivity{
 			public void onCompletion(MediaPlayer mp) {
 				btn_play.setBackgroundResource(R.drawable.selector_btn_play);
 				//防止播放完成之后仍然去执行更新进度的任务
-				play_seekbar.setProgress(videoView.getDuration());
+				play_seekbar.setProgress((int) videoView.getDuration());
 				handler.removeMessages(MESSAGE_UPDATE_PLAY_PROGRESS);
 			}
 		});
@@ -210,21 +216,19 @@ public class VideoPlayerActivity extends BaseActivity{
 			public boolean onError(MediaPlayer mp, int what, int extra) {
 				switch (what) {
 				case MediaPlayer.MEDIA_ERROR_UNKNOWN:
-					LogUtil.e(this, "播放出错");
-					Intent intent = new Intent(VideoPlayerActivity.this,VitamioPlayerActivity.class);
-					if(uri!=null){
-						intent.setData(uri);
-					}else {
-						Bundle bundle = new Bundle();
-						bundle.putInt("currentPosition", currentPosition);
-						bundle.putSerializable("videoList", videoList);
-						intent.putExtras(bundle);
-					}
-					startActivity(intent);
-					finish();
+					AlertDialog.Builder dialog = new AlertDialog.Builder(VitamioPlayerActivity.this);
+					dialog.setTitle("提示");
+					dialog.setMessage("播放出错,点击确定退出播放器");
+					dialog.setPositiveButton("确定", new OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							finish();
+						}
+					});
+					dialog.create().show();
 					break;
 				}
-				return false;
+				return true;
 			}
 		});
 	}
@@ -239,7 +243,7 @@ public class VideoPlayerActivity extends BaseActivity{
 		updateSystemTime();
 		initVolume();
 		
-		uri = getIntent().getData();
+		Uri uri = getIntent().getData();
 		if(uri!=null){
 			//从文件发起的播放请求
 			videoView.setVideoURI(uri);
@@ -277,7 +281,7 @@ public class VideoPlayerActivity extends BaseActivity{
 				videoView.start();
 				
 				btn_play.setBackgroundResource(R.drawable.selector_btn_pause);
-				play_seekbar.setMax(videoView.getDuration());
+				play_seekbar.setMax((int) videoView.getDuration());
 				tv_current_position.setText("00:00");
 				tv_total_time.setText(StringUtil.formatVideoDuration(videoView.getDuration()));
 				updatePlayProgress();
@@ -309,7 +313,7 @@ public class VideoPlayerActivity extends BaseActivity{
 	 */
 	private void updatePlayProgress(){
 		tv_current_position.setText(StringUtil.formatVideoDuration(videoView.getCurrentPosition()));
-		play_seekbar.setProgress(videoView.getCurrentPosition());
+		play_seekbar.setProgress((int) videoView.getCurrentPosition());
 		handler.sendEmptyMessageDelayed(MESSAGE_UPDATE_PLAY_PROGRESS, 1000);
 	}
 	
@@ -383,7 +387,7 @@ public class VideoPlayerActivity extends BaseActivity{
 			finish();
 			break;
 		case R.id.btn_screen:
-			videoView.switchScreen();
+		//	videoView.switchScreen();
 			updateScreenBtnBg();
 			break;
 		}
@@ -393,8 +397,8 @@ public class VideoPlayerActivity extends BaseActivity{
 	 * 改变屏幕按钮的背景图片
 	 */
 	private void updateScreenBtnBg(){
-		btn_screen.setBackgroundResource(videoView.isFullScreen()?
-				R.drawable.selector_btn_defaultscreen:R.drawable.selector_btn_fullscreen);
+		//btn_screen.setBackgroundResource(videoView.isFullScreen()?
+		//		R.drawable.selector_btn_defaultscreen:R.drawable.selector_btn_fullscreen);
 	}
 	
 	/**
@@ -420,7 +424,6 @@ public class VideoPlayerActivity extends BaseActivity{
 	}
 		
 	private float downY;
-	private Uri uri;
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
 		gestureDetector.onTouchEvent(event);

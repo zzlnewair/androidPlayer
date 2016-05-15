@@ -1,5 +1,7 @@
 package com.zzl.mobileplayer.ui.fragment;
 
+import java.util.ArrayList;
+
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore.Video.Media;
@@ -38,10 +40,11 @@ public class VideoListFragment extends BaseFragment{
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
 				 Cursor cursor = (Cursor) adapter.getItem(position);
-				 VideoItem videoItem = VideoItem.fromCursor(cursor);
+				 ArrayList<VideoItem> videoList = cursorToList(cursor);
 				
 				 Bundle bundle = new Bundle();
-				 bundle.putSerializable("videoItem", videoItem);
+				 bundle.putInt("currentPosition", position);
+				 bundle.putSerializable("videoList", videoList);
 				 enterActivity(VideoPlayerActivity.class, bundle);
 			}
 		});
@@ -61,6 +64,24 @@ public class VideoListFragment extends BaseFragment{
 	@Override
 	protected void processClick(View view) {
 		
+	}
+	
+	/**
+	 * 将cursor中的数据解析出并放入集合
+	 * @param cursor
+	 * @return
+	 */
+	private ArrayList<VideoItem> cursorToList(Cursor cursor){
+		cursor.moveToPosition(-1);//将cursor移动到最初位置，否则获取到的数据很可能不全
+		
+		ArrayList<VideoItem> list = new ArrayList<VideoItem>();
+		
+		//遍历cursor的所有结果集，然后将每一条结果集转成VideoItem对象放入集合当中
+		while(cursor.moveToNext()){
+			list.add(VideoItem.fromCursor(cursor));
+		}
+		
+		return list;
 	}
 
 }
