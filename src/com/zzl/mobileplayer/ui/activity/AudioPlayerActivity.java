@@ -236,10 +236,16 @@ public class AudioPlayerActivity extends BaseActivity{
 				updatePlayProgress();//开始更新播放进度
 				
 				File lyricFile = LyricLoader.loadLyricFile(audioItem.getTitle());
-				ArrayList<Lyric> list = LyricParser.parseLyricFromFile(lyricFile);
-				lyricView.setLyricList(list);
+				if (lyricFile.exists()){
+					ArrayList<Lyric> list = LyricParser.parseLyricFromFile(lyricFile);
+					lyricView.setLyricList(list);
+					updateLyric();//更新歌词
+				}else{
+					Toast.makeText(getApplicationContext(), "没有找到歌词", Toast.LENGTH_LONG).show();
+				}
 				
-				updateLyric();//更新歌词
+				
+				
 				
 			}else if (AudioPlayService.ACION_MEDIA_COMPLETION.equals(intent.getAction())) {
 				AudioItem audioItem = (AudioItem) intent.getExtras().getSerializable("audioItem");

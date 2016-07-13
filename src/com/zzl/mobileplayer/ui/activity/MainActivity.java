@@ -52,7 +52,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener{
 		viewPager.setOnPageChangeListener(new OnPageChangeListener() {
 			@Override
 			public void onPageSelected(int position) {
-				lightAndScaleTitle();
+				lightAndScaleTitle();// 高亮并缩放标题
 			}
 			@Override
 			public void onPageScrolled(int position, float positionOffset,
@@ -81,12 +81,12 @@ public class MainActivity extends FragmentActivity implements OnClickListener{
 		fragments.add(new VideoListFragment());
 		fragments.add(new AudioListFragment());
 		
-		caculateIndicateLineWidth();
+		caculateIndicateLineWidth();// 计算指示线的宽
 		
 		adapter = new MainPagerAdapter(getSupportFragmentManager(), fragments);
 		viewPager.setAdapter(adapter);
 
-		lightAndScaleTitle();
+		lightAndScaleTitle();//高亮并缩放标题
 	}
 
 	

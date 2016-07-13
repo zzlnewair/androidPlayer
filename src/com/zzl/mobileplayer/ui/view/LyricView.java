@@ -136,6 +136,7 @@ public class LyricView extends TextView{
 	 * 我就是高亮歌词
 	 */
 	private void calculateLightLyrciIndex(){
+		
 		for (int i = 0; i < lyricList.size(); i++) {
 			long startPoint = lyricList.get(i).getStartPoint();
 			if(i==(lyricList.size()-1)){

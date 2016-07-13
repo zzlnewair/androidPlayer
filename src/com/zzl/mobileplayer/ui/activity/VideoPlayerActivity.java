@@ -211,17 +211,17 @@ public class VideoPlayerActivity extends BaseActivity{
 				switch (what) {
 				case MediaPlayer.MEDIA_ERROR_UNKNOWN:
 					LogUtil.e(this, "播放出错");
-					Intent intent = new Intent(VideoPlayerActivity.this,VitamioPlayerActivity.class);
-					if(uri!=null){
-						intent.setData(uri);
-					}else {
-						Bundle bundle = new Bundle();
-						bundle.putInt("currentPosition", currentPosition);
-						bundle.putSerializable("videoList", videoList);
-						intent.putExtras(bundle);
-					}
-					startActivity(intent);
-					finish();
+//					Intent intent = new Intent(VideoPlayerActivity.this,VitamioPlayerActivity.class);
+//					if(uri!=null){
+//						intent.setData(uri);
+//					}else {
+//						Bundle bundle = new Bundle();
+//						bundle.putInt("currentPosition", currentPosition);
+//						bundle.putSerializable("videoList", videoList);
+//						intent.putExtras(bundle);
+//					}
+//					startActivity(intent);
+//					finish();
 					break;
 				}
 				return false;

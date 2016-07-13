@@ -3,7 +3,7 @@ package com.zzl.mobileplayer.ui.fragment;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import io.vov.vitamio.MediaPlayer;
+//import io.vov.vitamio.MediaPlayer;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore.Audio.Media;
